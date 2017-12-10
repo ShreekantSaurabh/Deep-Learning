@@ -1,4 +1,4 @@
-#Artificial Neural Network
+#Evaluating, Improving, Tuning Artificial Neural Network
 
 # Part 1 - Data Preprocessing
 # Import libraries
@@ -93,3 +93,83 @@ new_prediction = (new_prediction > 0.5)
 #Making the Confusion Matrix to evaluate the prediction
 from sklearn.metrics import confusion_matrix
 cm = confusion_matrix(Y_test, y_pred)
+
+#Part 4 - Evaluating, Improving and Tuning the ANN
+#Evaluating the ANN using Cross Validation
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+# Importing the Keras libraries and packages
+import keras
+from keras.models import Sequential     #Initialize the ANN
+from keras.layers import Dense          #builds layers of ANN
+
+def build_classifier():
+    classifier = Sequential()
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu', input_dim = 11))
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+    return classifier
+
+classifier = KerasClassifier(build_fn = build_classifier, batch_size = 10, epochs = 100)
+accuracies = cross_val_score(estimator = classifier, X = X_train, y = Y_train, cv = 10)
+mean = accuracies.mean()
+variance = accuracies.std()
+
+
+#Improving the ANN
+# Dropout Regularization to reduce overfitting if needed
+#Dropout disables some neurons randomly at each iterations to avoid overfitting
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+import keras
+from keras.models import Sequential     #Initialize the ANN
+from keras.layers import Dense
+from keras.layers import Dropout
+
+def build_classifier():
+    classifier = Sequential()
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu', input_dim = 11))
+    classifier.add(Dropout(p = 0.1))        #adding Dropout to 1st hidden layer
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dropout(p = 0.1))        #adding Dropout to 2nd hidden layer
+    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+    return classifier
+
+classifier = KerasClassifier(build_fn = build_classifier, batch_size = 10, epochs = 100)
+accuracies = cross_val_score(estimator = classifier, X = X_train, y = Y_train, cv = 10)
+mean = accuracies.mean()
+variance = accuracies.std()
+
+
+#Parameter Tuning the ANN using Grid Search
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import GridSearchCV
+import keras
+from keras.models import Sequential     #Initialize the ANN
+from keras.layers import Dense
+
+def build_classifier(optimizer):
+    classifier = Sequential()
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu', input_dim = 11))
+    classifier.add(Dense(units = 6, kernel_initializer = 'uniform', activation = 'relu'))
+    classifier.add(Dense(units = 1, kernel_initializer = 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer = optimizer, loss = 'binary_crossentropy', metrics = ['accuracy'])
+    return classifier
+
+classifier = KerasClassifier(build_fn = build_classifier)
+parameters = {'batch_size': [25, 32],
+              'epochs': [100,500],
+              'optimizer': ['adam', 'rmsprop']}
+#batch_size, epochs etc. parameter name must be same as in the function definition in documentation
+#to tune optimizer,loss, units etc., we have to make a parameter in the function build_classifier as done for optimizer 
+
+grid_search = GridSearchCV(estimator = classifier,
+                           param_grid = parameters,
+                           scoring = 'accuracy',
+                           cv = 10)
+grid_search = grid_search.fit(X_train, Y_train)
+best_parameters = grid_search.best_params_
+best_accuracy = grid_search.best_score_
+
